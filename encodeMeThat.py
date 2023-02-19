@@ -58,33 +58,11 @@ import tamper.varnish as varnish
 import tamper.versionedkeywords as versionedkeywords
 import tamper.versionedmorekeywords as versionedmorekeywords
 import tamper.xforwardedfor as xforwardedfor
-
-import argparse
-import os
 import time
+import discord
+from discord.ext import commands
+import logging
 # import file
-
-listMSSQL = {between,charencode,charunicodeencode,equaltolike,greatest,multipleespacio,percentage,sp_password,space2comment,space2dash,space2mssqlblank,space2mysqldash,space2plus,space2randomblank,unionalltounion,unmagicquotes}
-listMYSQL = {between,bluecoat,charencode,charunicodeencode,concat2concatws,equaltolike,greatest,ifnull2ifisnull,modsecurityversioned,modsecurityzeroversioned,multiplespaces,percentage,randomcase,space2comment,space2hash,space2morehash,space2mysqldash,space2plus,space2randomblank,unionalltounion,unmagicquotes,versionedkeywords,versionedmorekeywords,xforwardedfor}
-listGeneric = {apostrophemask,apostrophenullencode,base64encode,between,chardoubleencode,charencode,charunicodeencode,equaltolike,greatest,ifnull2ifisnull,multiplespaces,percentage,randomcase,space2comment,space2plus,space2randomblank,unionalltounion,unmagicquotes}
-
-named_tuple = time.localtime() # get struct_time
-time_string = time.strftime("%m%d%Y-%H:%M", named_tuple)
-
-parser = argparse.ArgumentParser()
-
-parser.add_argument('--payload', action="store", type=str, dest="paypay", help='Enter the payload in that param')
-parser.add_argument('--file', action="store", dest="payfile", help='Enter a file with a list of paylaods')
-parser.add_argument('--mysql-encode', action="store_true", dest="mysqlenc", help='Run deafult mysql tampers')
-parser.add_argument('--mssql-encode', action="store_true", dest="mssqlenc", help='Run defaul mssql tampers')
-parser.add_argument('--random-encode', action="store_true", dest="rndEnc", help='Run random tampers from file')
-parser.add_argument('--random-concat', action="store", dest="rndCnt", help='Run random concatenated tampers from file')
-parser.add_argument('--massive', action="store", dest="mssv", help='Run all tampers')
-
-os.system("touch ./out/"+time_string+"-encoded.out")
-f= open("./out/encoded.out","w+")
-
-# print parser.parse_args()
 
 print("\n[+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+]\n")
 
@@ -97,37 +75,73 @@ print('''
 print(" Payload encoder using sqlmap tampers.\n")
 print("\n[+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+][+]\n")
 
-argVt = parser.parse_args()
+# Configurar el objeto Logger
+logger = logging.getLogger('my_logger')
+logger.setLevel(logging.DEBUG)
 
-# sqlinjPayload = "'; IF (1=1) WAITFOR DELAY '0:0:20'--"
-# sqlinjPayload = input("[+] Enter payload:")
-sqlinjPayload = argVt.paypay
-print("Let¡s encode: "+argVt.paypay)
+# Configurar el formateo del mensaje
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-# payList[] = listGeneric
-if argVt.mysqlenc:
-    print("[+] You are using mysql default encoding options")
-    payList = listMYSQL
-    pass
-if argVt.mssqlenc:
-    print("[+] You are using mssql default encoding options")
-    payList = listMSSQL
-    pass
+# Configurar el manejador para enviar mensajes a la consola
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
-print("Result:\n")
-# listMSSQL
-for payloadEncoder in payList:
-    # print((sqlinjPayload))
-    try:
-        print(payloadEncoder.tamper(sqlinjPayload))
-        f.write(payloadEncoder.tamper(sqlinjPayload)+"\n")
+# Configurar el manejador para enviar mensajes a un archivo de texto
+file_handler = logging.FileHandler('encoder-bot.log')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+listMSSQL = {between,charencode,charunicodeencode,equaltolike,greatest,multipleespacio,percentage,sp_password,space2comment,space2dash,space2mssqlblank,space2mysqldash,space2plus,space2randomblank,unionalltounion,unmagicquotes}
+listMYSQL = {between,bluecoat,charencode,charunicodeencode,concat2concatws,equaltolike,greatest,ifnull2ifisnull,modsecurityversioned,modsecurityzeroversioned,multiplespaces,percentage,randomcase,space2comment,space2hash,space2morehash,space2mysqldash,space2plus,space2randomblank,unionalltounion,unmagicquotes,versionedkeywords,versionedmorekeywords,xforwardedfor}
+listGeneric = {apostrophemask,apostrophenullencode,base64encode,between,chardoubleencode,charencode,charunicodeencode,equaltolike,greatest,ifnull2ifisnull,multiplespaces,percentage,randomcase,space2comment,space2plus,space2randomblank,unionalltounion,unmagicquotes}
+
+named_tuple = time.localtime() # get struct_time
+time_string = time.strftime("%m%d%Y-%H:%M", named_tuple)
+
+bot = commands.Bot(command_prefix='!')
+
+@bot.command()
+async def encode(ctx, encoding_type, text):
+    print("Let's encode: "+text)
+    if encoding_type is "mysql":
+        print("[+] You are using mysql default encoding options")
+        logger.info('[+] You are using mysql default encoding options')
+        payList = listMYSQL
         pass
-    except KeyError as e:
+    if encoding_type is "mssql":
+        print("[+] You are using mssql default encoding options")
+        logger.info('[+] You are using mssql default encoding options')
+        payList = listMSSQL
         pass
-        raise
+    if encoding_type is "random-encode":
+        result_dict = set().union(listMSSQL, listMYSQL, listGeneric)
+        print("[+] Using random-encode default encoding options")   
+        logger.info('[+] You are using random-encode default encoding options')
+        selected_items = random.sample(result_dict, 7)
+        payList = selected_items
+    if encoding_type is "massive":
+        print("[+] Using massive default encoding options")     
+        logger.info('[+] You are using massive default encoding options')
+        for lst in [listMSSQL, listMYSQL, listGeneric]:
+            for item in lst:
+                unique_dict[item] = True
+                unique_list = list(unique_dict.keys())
+        
+    for payloadEncoder in payList:   
+        try:
+            print(payloadEncoder.tamper(sqlinjPayload))
+            response = f'```{payloadEncoder.tamper(sqlinjPayload)}```'           
+            pass
+        except KeyError as e:
+            logger.error(e)
+            pass
+            raise
+
+    logger.debug('Sended response ')
+    await ctx.send(response)
 
 
-print(time_string+"-encoded.out")
-
-# for i in range(len(payList)):
-#     print(payList[i].tamper(sqlinjPayload)+"\n")
+bot.run('DISCORD-BOT-TOKEN') 
