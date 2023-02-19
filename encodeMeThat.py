@@ -104,7 +104,7 @@ time_string = time.strftime("%m%d%Y-%H:%M", named_tuple)
 bot = commands.Bot(command_prefix='!')
 
 @bot.command()
-async def encode(ctx, encoding_type, text):
+async def encode(ctx, encoding_type, *, text):
     print("Let's encode: "+text)
     if encoding_type is "mysql":
         print("[+] You are using mysql default encoding options")
